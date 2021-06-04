@@ -1,4 +1,4 @@
-/* $Id: 5ed23e10c7989b37559aee18a342787f7e3ade94 $ */
+/* $Id: 47db7b5025f4ca800961335f30ef67b18cfe69ca $ */
 
 /*********************************************************************
 * Software License Agreement (BSD License)
@@ -440,6 +440,32 @@ TEST(OStream, pose)
   out << pose;
   std::string expected("(1000, 2400, 200 [14R]), ([0, 0, 0], 1)");
   EXPECT_EQ(out.str(), expected);
+}
+
+TEST(ForceUTMZone, point)
+{
+
+    geographic_msgs::GeoPoint zone2, zone3;
+    zone2.latitude=24.02;
+    zone2 = geodesy::toMsg(24.02, 5.999);
+    zone3 = geodesy::toMsg(24.02, 6.001);
+    geodesy::UTMPoint pt2, pt3, pt4;
+    geodesy::fromMsg(zone2, pt2);
+    geodesy::fromMsg(zone3, pt3);
+
+    EXPECT_FALSE(geodesy::sameGridZone(pt2, pt3) );
+
+    double diffx = pt2.easting - pt3.easting;
+    double diffy = pt2.northing - pt3.northing;
+    double distance = std::sqrt(diffx*diffx + diffy*diffy);
+
+    //Now force the pt3 into pt2's grid zone
+    geodesy::fromMsg(zone3, pt4, true, pt2.band, pt2.zone);
+    diffx = pt2.easting - pt4.easting;
+    diffy = pt2.northing - pt4.northing;
+    double distance2 = std::sqrt(diffx*diffx + diffy*diffy);
+    ROS_INFO("Prev Distance %f, Actual Distance %f", distance, distance2);
+    EXPECT_LT(distance2, distance);
 }
 
 // Run all the tests that were declared with TEST()
