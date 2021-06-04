@@ -35,7 +35,8 @@
 *********************************************************************/
 
 //#include <exception>
-#include "angles/angles.h"
+#include <ros/ros.h>
+#include <angles/angles.h>
 #include <geodesy/utm.h>
 
 /**  @file
@@ -71,6 +72,7 @@ namespace geodesy
 #define UTM_E6		(UTM_E4*UTM_E2)		// e^6
 #define UTM_EP2		(UTM_E2/(1-UTM_E2))	// e'^2
 
+
 /**
  * Determine the correct UTM band letter for the given latitude.
  * (Does not currently handle polar (UPS) zones: A, B, Y, Z).
@@ -80,7 +82,6 @@ namespace geodesy
 static char UTMBand(double Lat, double Lon)
 {
   char LetterDesignator;
-  (void)Lon;
 
   if     ((84 >= Lat) && (Lat >= 72))  LetterDesignator = 'X';
   else if ((72 > Lat) && (Lat >= 64))  LetterDesignator = 'W';
@@ -112,10 +113,10 @@ static char UTMBand(double Lat, double Lon)
  *
  *  Equations from USGS Bulletin 1532
  *
- *  @param from WGS 84 point message.
- *  @return UTM point.
+ *  @param from UTM point.
+ *  @return WGS 84 point message.
  */
-geographic_msgs::msg::GeoPoint toMsg(const UTMPoint &from)
+geographic_msgs::GeoPoint toMsg(const UTMPoint &from)
 {
   //remove 500,000 meter offset for longitude
   double x = from.easting - 500000.0;
@@ -156,7 +157,7 @@ geographic_msgs::msg::GeoPoint toMsg(const UTMPoint &from)
   D = x/(N1*k0);
 
   // function result
-  geographic_msgs::msg::GeoPoint to;
+  geographic_msgs::GeoPoint to;
   to.altitude = from.altitude;
   to.latitude =
     phi1Rad - ((N1*tan(phi1Rad)/R1)
@@ -183,7 +184,7 @@ geographic_msgs::msg::GeoPoint toMsg(const UTMPoint &from)
  *  @param from WGS 84 point message.
  *  @param to UTM point.
  */
-void fromMsg(const geographic_msgs::msg::GeoPoint &from, UTMPoint &to,
+void fromMsg(const geographic_msgs::GeoPoint &from, UTMPoint &to,
         const bool& force_zone, const char& band, const uint8_t& zone)
 {
   double Lat = from.latitude;
@@ -289,9 +290,22 @@ bool isValid(const UTMPoint &pt)
 }
 
 /** Create UTM point from WGS 84 geodetic point. */
-UTMPoint::UTMPoint(const geographic_msgs::msg::GeoPoint &pt)
+UTMPoint::UTMPoint(const geographic_msgs::GeoPoint &pt)
 {
   fromMsg(pt, *this);
+}
+
+/** Convert UTM pose to WGS 84 geodetic pose.
+ *
+ *  @param from UTM pose.
+ *  @return WGS 84 pose message.
+ */
+geographic_msgs::GeoPose toMsg(const UTMPose &from)
+{
+  geographic_msgs::GeoPose to;
+  to.position = toMsg(from.position);
+  to.orientation = from.orientation;
+  return to;
 }
 
 /** Convert WGS 84 geodetic pose to UTM pose.
@@ -301,7 +315,7 @@ UTMPoint::UTMPoint(const geographic_msgs::msg::GeoPoint &pt)
  *
  *  @todo define the orientation transformation properly
  */
-void fromMsg(const geographic_msgs::msg::GeoPose &from, UTMPose &to,
+void fromMsg(const geographic_msgs::GeoPose &from, UTMPose &to,
         const bool& force_zone, const char& band, const uint8_t& zone)
 {
   fromMsg(from.position, to.position, force_zone, band, zone);
@@ -319,7 +333,7 @@ bool isValid(const UTMPose &pose)
                  + pose.orientation.y * pose.orientation.y
                  + pose.orientation.z * pose.orientation.z
                  + pose.orientation.w * pose.orientation.w);
-  return fabs(len2 - 1.0) <= TF_QUATERNION_TOLERANCE;
+  return fabs(len2 - 1.0) <= tf::QUATERNION_TOLERANCE;
 }
 
 } // end namespace geodesy

@@ -1,18 +1,14 @@
 #!/usr/bin/env python
 
 import unittest
-import uuid
 
 from geographic_msgs.msg import GeographicMap
 from geographic_msgs.msg import GeoPoint
 from geographic_msgs.msg import WayPoint
 from geometry_msgs.msg import Point
-from unique_identifier_msgs.msg import UUID
+from uuid_msgs.msg import UniqueID
 
 from geodesy.wu_point import *
-
-suite = unittest.TestSuite()
-
 
 def fromLatLong(lat, lon, alt=float('nan')):
     """Generate WayPoint from latitude, longitude and (optional) altitude.
@@ -100,18 +96,15 @@ class TestWuPoint(unittest.TestCase):
         for i in range(len(uuids)):
             latlon = GeoPoint(latitude = latitudes[i],
                               longitude = longitudes[i])
-            points.append(WayPoint(id = UUID(uuid = list(uuid.UUID(uuids[i]).bytes)),
+            points.append(WayPoint(id = UniqueID(uuid = uuids[i]),
                                    position = latlon))
     
         # test iterator
         wupts = WuPointSet(points)
         i = 0
         for w in wupts:
-            uuid_msg = UUID(uuid=list(uuid.UUID(uuids[i]).bytes))
-
-            self.assertEqual(str(uuid.UUID(bytes=bytes(w.uuid()), version=5)), uuids[i])
-            self.assertEqual(str(uuid.UUID(bytes=bytes(wupts[str(uuid_msg.uuid)].uuid()), version=5)), uuids[i])
-
+            self.assertEqual(w.uuid(), uuids[i])
+            self.assertEqual(wupts[uuids[i]].uuid(), uuids[i])
             self.assertAlmostEqual(w.utm.easting, eastings[i], places=3)
             self.assertAlmostEqual(w.utm.northing, northings[i], places=3)
             point_xy = w.toPointXY()
@@ -126,20 +119,19 @@ class TestWuPoint(unittest.TestCase):
         self.assertFalse(bogus in wupts)
         self.assertEqual(wupts.get(bogus), None)
 
-        uu = str(UUID(uuid=list(uuid.UUID(uuids[1]).bytes)).uuid)
+        uu = uuids[1]
         self.assertTrue(uu in wupts)
         wpt = wupts[uu]
-        self.assertEqual(str(wpt.uuid()), uu)
-
+        self.assertEqual(wpt.uuid(), uu)
         self.assertNotEqual(wupts.get(uu), None)
-        self.assertEqual(str(wupts.get(uu).uuid()), uu)
+        self.assertEqual(wupts.get(uu).uuid(), uu)
 
         # test index() function
-        for i in range(len(uuids)):
-            wpuuid = str(UUID(uuid=list(uuid.UUID(uuids[i]).bytes)).uuid)
-            self.assertEqual(wupts.index(wpuuid), i)
-            self.assertEqual(str(uuid.UUID(bytes=bytes(wupts.points[i].id.uuid), version=5)), uuids[i])
+        for i in xrange(len(uuids)):
+            self.assertEqual(wupts.index(uuids[i]), i)
+            self.assertEqual(wupts.points[i].id.uuid, uuids[i])
 
 if __name__ == '__main__':
-    runner = unittest.TextTestRunner(verbosity=3)
-    result = runner.run(suite)
+    import rosunit
+    PKG='geodesy'
+    rosunit.unitrun(PKG, 'test_xml_map_py', TestWuPoint) 

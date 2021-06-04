@@ -4,9 +4,6 @@ import unittest
 
 from geodesy.bounding_box import *     # module being tested
 
-suite = unittest.TestSuite()
-
-
 class TestPythonBoundingBox(unittest.TestCase):
     """Unit tests for Python bounding box functions. """
 
@@ -47,7 +44,7 @@ class TestPythonBoundingBox(unittest.TestCase):
         self.assertEqual(max_lon, max_lon2)
         self.assertEqual(max_alt, bb.max_pt.altitude)
 
-
 if __name__ == '__main__':
-    runner = unittest.TextTestRunner(verbosity=3)
-    result = runner.run(suite)
+    import rosunit
+    PKG='geodesy'
+    rosunit.unitrun(PKG, 'test_uuid_py', TestPythonBoundingBox) 

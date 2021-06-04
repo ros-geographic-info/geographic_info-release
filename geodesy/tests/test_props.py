@@ -10,9 +10,6 @@ from geographic_msgs.msg import MapFeature
 from geographic_msgs.msg import RouteSegment
 from geographic_msgs.msg import WayPoint
 
-suite = unittest.TestSuite()
-
-
 class TestPythonProps(unittest.TestCase):
     """Unit tests for Python KeyValue property handling.
     """
@@ -73,7 +70,7 @@ class TestPythonProps(unittest.TestCase):
         self.assertEqual(get(f, 'notset'), 'any')
         self.assertRaises(ValueError, match, f, 'notset')
 
-
 if __name__ == '__main__':
-    runner = unittest.TextTestRunner(verbosity=3)
-    result = runner.run(suite)
+    import rosunit
+    PKG='geodesy'
+    rosunit.unitrun(PKG, 'test_uuid_py', TestPythonProps) 

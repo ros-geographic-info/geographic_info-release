@@ -53,7 +53,7 @@ import geodesy.utm
 from geographic_msgs.msg import WayPoint
 from geometry_msgs.msg import Point
 
-class WuPoint:
+class WuPoint():
     """
     :class:`WuPoint` represents a map way point with associated UTM_
     information.
@@ -61,9 +61,9 @@ class WuPoint:
     :param waypt: `geographic_msgs/WayPoint`_ message.
     :param utm: Corresponding :class:`geodesy.utm.UTMPoint` object. If None
                 provided, the *utm* object will be created.
- 
+
     .. describe:: str(wu_point)
- 
+
        :returns: String representation of :class:`WuPoint` object.
     """
 
@@ -111,7 +111,7 @@ class WuPoint:
         """:returns: UUID_ of way point. """
         return self.way_pt.id.uuid
 
-class WuPointSet:
+class WuPointSet():
     """
     :class:`WuPointSet` is a container for the way points in a
     `geographic_msgs/GeographicMap`_ or
@@ -128,20 +128,20 @@ class WuPointSet:
        :returns: The number of points in the set.
 
     .. describe:: wu_set[uuid]
- 
+
        :returns: The point with key *uuid*.  Raises a :exc:`KeyError`
                  if *uuid* is not in the set.
- 
+
     .. describe:: uuid in wu_set
- 
+
        :returns: ``True`` if *wu_set* has a key *uuid*, else ``False``.
- 
+
     .. describe:: uuid not in wu_set
- 
+
        Equivalent to ``not uuid in wu_set``.
- 
+
     .. describe:: iter(wu_set)
- 
+
        :returns: An iterator over the points in the set.
 
     These methods are also provided:
@@ -160,8 +160,8 @@ class WuPointSet:
         self.way_point_ids = {}         # points symbol table
         self.n_points = len(self.points)
         for wid in range(self.n_points):
-            self.way_point_ids[str(self.points[wid].id.uuid)] = wid
-
+            self.way_point_ids[self.points[wid].id.uuid] = wid
+        self.way_point_ids = dict(self.way_point_ids)
         # Create empty list of UTM points, corresponding to map points.
         # They will be evaluated lazily, when first needed.
         self.utm_points = [None for wid in range(self.n_points)]
@@ -188,9 +188,6 @@ class WuPointSet:
         """Point set length."""
         return self.n_points
 
-    def __next__(self):
-        return self.next()
-
     def _get_point_with_utm(self, index):
         """Get way point with UTM coordinates.
 
@@ -200,7 +197,7 @@ class WuPointSet:
         :returns: Corresponding :class:`WuPoint` object.
         """
         way_pt = self.points[index]
-        utm_pt = self.utm_points[index]
+        utm_pt = list(self.utm_points)[index]
         if utm_pt is not None:
             utm_pt = geodesy.utm.fromMsg(way_pt.position)
             self.utm_points[index] = utm_pt
@@ -262,7 +259,7 @@ class WuPointSet:
         """
         return self.way_point_ids.get(key, default)
 
-    def next(self):
+    def __next__(self):
         """ Next iteration point.
 
         :returns: Next :class:`WuPoint`.
